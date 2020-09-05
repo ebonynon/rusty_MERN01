@@ -10,5 +10,11 @@ edition = "2018"
 actix-web = "2.0"
 actix-rt = "1.0"
 listenfd = "0.3"
-mongodb = "1.1.0"
 dotenv = "0.9.0"
+bson = "1.0.0"
+futures = "0.3.5"
+
+[dependencies.mongodb]
+version = "1.1.0"
+default-features = false
+features = ["async-std-runtime"]

@@ -3,11 +3,14 @@ extern crate mongodb;
 
 use actix_web::get;
 use actix_web::{web, App, HttpResponse, HttpServer, Responder};
+use futures::stream::StreamExt;
 use listenfd::ListenFd;
-use mongodb::{options::ClientOptions, Client};
+use mongodb::{
+    bson::{doc, Bson},
+    options::ClientOptions,
+    Client,
+};
 use std::env;
-
-mod logs_handlers;
 
 #[get("/")]
 async fn index() -> impl Responder {
@@ -44,12 +47,34 @@ async fn main() -> std::io::Result<()> {
         println!("{}", db_name);
     }
 
+    //let db = client.database("T");
+
+    //let books_collection = db.collection("books");
+    let books_collection = client.database("T").collection("books");
+
+    // Query the database for all pets which are cats.
+    let mut cursor = books_collection.find(doc! {}, None).await.unwrap();
+
+    //let mut results = Vec::new();
+    // while let Some(result) = cursor.next().await {
+    //     match result {
+    //         Ok(document) => {
+    //             //results.push(document);
+    //             println!("{}", document);
+    //         }
+    //     }
+    // }
+
+    while let Some(doc) = cursor.next().await {
+        println!("{}", doc.unwrap())
+    }
+
     let mut server = HttpServer::new(|| {
         App::new()
+            //.data(cursor.clone())
             .service(index)
             .service(index2)
             .service(index3)
-            .service(web::scope("/api").configure(logs_handlers::scoped_config))
     });
 
     server = if let Some(l) = listenfd.take_tcp_listener(0).unwrap() {
