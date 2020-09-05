@@ -3,7 +3,6 @@ extern crate mongodb;
 
 use actix_web::get;
 use actix_web::{web, App, HttpResponse, HttpServer, Responder};
-//use dotenv::dotenv;
 use listenfd::ListenFd;
 use mongodb::{options::ClientOptions, Client};
 use std::env;
@@ -23,27 +22,16 @@ async fn index3() -> impl Responder {
     HttpResponse::Ok().body("Hey there!")
 }
 
-// #[cfg(feature = "tokio-runtime")]
-// #[tokio::mongocall]
-// async fn mongocall() -> mongodb::error::Result<()> {
-//     dotenv::dotenv().expect("Failed to read .env file");
-//     let case_sensitive = env::var("MONGODB_URI").expect("MONGODB_URI not found");
-
-//     let mut client_options = ClientOptions::parse(&case_sensitive.to_string()).await?;
-// }
-
 #[actix_rt::main]
 async fn main() -> std::io::Result<()> {
     let mut listenfd = ListenFd::from_env();
-    // mongocall()
+
     dotenv::dotenv().expect("Failed to read .env file");
     let case_sensitive = env::var("MONGODB_URI").expect("MONGODB_URI not found");
-
+    // Parse a connection string into an options struct.
     let mut client_options = ClientOptions::parse(&case_sensitive.to_string())
         .await
         .unwrap();
-
-    // let mut client_options = ClientOptions::parse(&case_sensitive.to_string()).await?;
 
     // Manually set an option.
     client_options.app_name = Some("XeonAPI".to_string());
