@@ -11,6 +11,11 @@ use mongodb::{
     Client,
 };
 use std::env;
+use std::sync::Mutex;
+
+fn scoped_config(cfg: &mut web::ServiceConfig) {
+    cfg.service(web::resource("/logs").route(web::get().to(get_logs)));
+}
 
 #[get("/")]
 async fn index() -> impl Responder {
@@ -19,6 +24,31 @@ async fn index() -> impl Responder {
 #[get("/books")]
 async fn index_books() -> impl Responder {
     HttpResponse::Ok().body("Hello Book's world again!")
+}
+
+async fn get_logs(data: web::Data<Mutex<Client>>) -> impl Responder {
+    let logs_collection = data.lock().unwrap().database("T").collection("books");
+
+    //#let filter = doc! {};
+    //#   let find_options = FindOptions::builder().sort(doc! { "createdOn": 1 }).build();
+    ////let find_options = FindOptions::builder().sort(doc! { "_id": -1}).build();
+    ////let mut cursor = logs_collection.find(filter, find_options).await.unwrap();
+
+    // Query the database for all pets which are cats.
+    let mut cursor = logs_collection.find(doc! {}, None).await.unwrap();
+
+    let mut results = Vec::new();
+    while let Some(result) = cursor.next().await {
+        match result {
+            Ok(document) => {
+                results.push(document);
+            }
+            _ => {
+                return HttpResponse::InternalServerError().finish();
+            }
+        }
+    }
+    HttpResponse::Ok().json(results)
 }
 
 #[actix_rt::main]
@@ -34,7 +64,7 @@ async fn main() -> std::io::Result<()> {
 
     // Manually set an option.
     client_options.app_name = Some("XeonAPI".to_string());
-
+/*
     // Get a handle to the deployment.
     let client = Client::with_options(client_options).unwrap();
 
@@ -52,8 +82,16 @@ async fn main() -> std::io::Result<()> {
     while let Some(doc) = cursor.next().await {
         println!("{}", doc.unwrap())
     }
+*/
+    //let mut server = HttpServer::new(|| App::new().service(index).service(index_books));
 
-    let mut server = HttpServer::new(|| App::new().service(index).service(index_books));
+    let client = web::Data::new(Mutex::new(Client::with_options(client_options).unwrap()));
+
+    let mut server = HttpServer::new(move || {
+        App::new()
+            .app_data(client.clone())
+            .service(web::scope("/api").configure(scoped_config))
+    });
 
     server = if let Some(l) = listenfd.take_tcp_listener(0).unwrap() {
         server.listen(l)?
