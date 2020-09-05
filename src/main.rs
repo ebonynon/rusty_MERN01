@@ -1,6 +1,11 @@
+extern crate dotenv;
+
+use dotenv::dotenv;
 use actix_web::get;
 use actix_web::{App, HttpResponse, HttpServer, Responder};
 use listenfd::ListenFd;
+use mongodb::{options::ClientOptions, Client};
+use std::env;
 
 #[get("/")]
 async fn index() -> impl Responder {
@@ -18,6 +23,11 @@ async fn index3() -> impl Responder {
 #[actix_rt::main]
 async fn main() -> std::io::Result<()> {
     let mut listenfd = ListenFd::from_env();
+
+    dotenv::dotenv().expect("Failed to read .env file");
+    let case_sensitive = env::var("MONGODB_URI").expect("MONGODB_URI not found");
+    println!("Env : {}", case_sensitive);
+    
     let mut server = HttpServer::new(|| App::new().service(index).service(index2).service(index3));
 
     server = if let Some(l) = listenfd.take_tcp_listener(0).unwrap() {
