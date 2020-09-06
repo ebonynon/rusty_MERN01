@@ -1,13 +1,7 @@
 use actix_web::get;
 use actix_web::{web, App, HttpResponse, HttpServer, Responder};
-use futures::stream::StreamExt;
 use listenfd::ListenFd;
-use mongodb::{
-    bson::doc,
-    //bson::{doc, Bson},
-    options::ClientOptions,
-    Client,
-};
+use mongodb::{options::ClientOptions, Client};
 use std::env;
 use std::sync::Mutex;
 
