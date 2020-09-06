@@ -13,33 +13,9 @@ use std::sync::Mutex;
 
 mod books;
 
-fn scoped_config(cfg: &mut web::ServiceConfig) {
-    cfg.service(web::resource("/logs").route(web::get().to(get_logs)));
-}
-
 #[get("/")]
 async fn index() -> impl Responder {
     HttpResponse::Ok().body("<h3>Welcome to Rust web server!</h3>")
-}
-
-async fn get_logs(data: web::Data<Mutex<Client>>) -> impl Responder {
-    let logs_collection = data.lock().unwrap().database("T").collection("books");
-
-    // Query the database for all pets which are cats.
-    let mut cursor = logs_collection.find(doc! {}, None).await.unwrap();
-
-    let mut results = Vec::new();
-    while let Some(result) = cursor.next().await {
-        match result {
-            Ok(document) => {
-                results.push(document);
-            }
-            _ => {
-                return HttpResponse::InternalServerError().finish();
-            }
-        }
-    }
-    HttpResponse::Ok().json(results)
 }
 
 #[actix_rt::main]
@@ -61,11 +37,7 @@ async fn main() -> std::io::Result<()> {
     let mut server = HttpServer::new(move || {
         App::new()
             .app_data(client.clone())
-            .service(
-                web::scope("/api")
-                    .configure(scoped_config)
-                    .configure(books::scoped_config),
-            )
+            .service(web::scope("/api").configure(books::scoped_config))
             .service(index)
     });
 
