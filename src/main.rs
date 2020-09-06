@@ -5,6 +5,7 @@ use mongodb::{options::ClientOptions, Client};
 use std::env;
 use std::sync::Mutex;
 
+mod book;
 mod books;
 
 #[get("/")]
@@ -31,7 +32,11 @@ async fn main() -> std::io::Result<()> {
     let mut server = HttpServer::new(move || {
         App::new()
             .app_data(client.clone())
-            .service(web::scope("/api").configure(books::scoped_config))
+            .service(
+                web::scope("/api")
+                    .configure(books::scoped_config)
+                    .configure(book::scoped_config),
+            )
             .service(index)
     });
 
