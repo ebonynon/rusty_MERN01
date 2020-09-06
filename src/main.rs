@@ -1,17 +1,20 @@
-extern crate dotenv;
-extern crate mongodb;
+// extern crate dotenv;
+// extern crate mongodb;
 
 use actix_web::get;
 use actix_web::{web, App, HttpResponse, HttpServer, Responder};
 use futures::stream::StreamExt;
 use listenfd::ListenFd;
 use mongodb::{
-    bson::{doc, Bson},
+    bson::doc,
+    //bson::{doc, Bson},
     options::ClientOptions,
     Client,
 };
 use std::env;
 use std::sync::Mutex;
+
+mod books;
 
 fn scoped_config(cfg: &mut web::ServiceConfig) {
     cfg.service(web::resource("/logs").route(web::get().to(get_logs)));
@@ -19,12 +22,12 @@ fn scoped_config(cfg: &mut web::ServiceConfig) {
 
 #[get("/")]
 async fn index() -> impl Responder {
-    HttpResponse::Ok().body("<h2>Welcome to Rust web server!</h2>")
+    HttpResponse::Ok().body("<h3>Welcome to Rust web server!</h3>")
 }
-#[get("/books")]
-async fn index_books() -> impl Responder {
-    HttpResponse::Ok().body("Hello Book's world again!")
-}
+// #[get("/books")]
+// async fn index_books() -> impl Responder {
+//     HttpResponse::Ok().body("Hello Book's world again!")
+// }
 
 async fn get_logs(data: web::Data<Mutex<Client>>) -> impl Responder {
     let logs_collection = data.lock().unwrap().database("T").collection("books");
@@ -64,25 +67,25 @@ async fn main() -> std::io::Result<()> {
 
     // Manually set an option.
     client_options.app_name = Some("XeonAPI".to_string());
-/*
-    // Get a handle to the deployment.
-    let client = Client::with_options(client_options).unwrap();
+    /*
+        // Get a handle to the deployment.
+        let client = Client::with_options(client_options).unwrap();
 
-    // List the names of the databases in that deployment.
-    for db_name in client.list_database_names(None, None).await.unwrap() {
-        println!("{}", db_name);
-    }
+        // List the names of the databases in that deployment.
+        for db_name in client.list_database_names(None, None).await.unwrap() {
+            println!("{}", db_name);
+        }
 
-    //let books_collection = db.collection("books");
-    let books_collection = client.database("T").collection("books");
+        //let books_collection = db.collection("books");
+        let books_collection = client.database("T").collection("books");
 
-    // Query the database for all pets which are cats.
-    let mut cursor = books_collection.find(doc! {}, None).await.unwrap();
+        // Query the database for all pets which are cats.
+        let mut cursor = books_collection.find(doc! {}, None).await.unwrap();
 
-    while let Some(doc) = cursor.next().await {
-        println!("{}", doc.unwrap())
-    }
-*/
+        while let Some(doc) = cursor.next().await {
+            println!("{}", doc.unwrap())
+        }
+    */
     //let mut server = HttpServer::new(|| App::new().service(index).service(index_books));
 
     let client = web::Data::new(Mutex::new(Client::with_options(client_options).unwrap()));
@@ -90,7 +93,12 @@ async fn main() -> std::io::Result<()> {
     let mut server = HttpServer::new(move || {
         App::new()
             .app_data(client.clone())
-            .service(web::scope("/api").configure(scoped_config))
+            .service(
+                web::scope("/api")
+                    .configure(scoped_config)
+                    .configure(books::scoped_config),
+            )
+            .service(index)
     });
 
     server = if let Some(l) = listenfd.take_tcp_listener(0).unwrap() {
