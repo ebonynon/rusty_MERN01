@@ -1,4 +1,4 @@
-# Rusty_Clz-API
+# Rusty_MERN01
 
 Server rewrite with `Rust`
 
