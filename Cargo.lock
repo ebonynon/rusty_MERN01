@@ -1794,7 +1794,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "rusty_clz-api"
+name = "rusty_MERN01"
 version = "0.1.0"
 dependencies = [
  "actix-rt",
