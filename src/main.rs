@@ -7,6 +7,7 @@ use std::sync::Mutex;
 
 mod book;
 mod books;
+mod add_book;
 
 #[get("/")]
 async fn index() -> impl Responder {
@@ -35,7 +36,8 @@ async fn main() -> std::io::Result<()> {
             .service(
                 web::scope("/api")
                     .configure(books::scoped_config)
-                    .configure(book::scoped_config),
+                    .configure(book::scoped_config)
+                    .configure(add_book::scoped_config),
             )
             .service(index)
     });
